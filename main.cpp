@@ -1,4 +1,4 @@
-#include "IMusic.h"
+﻿#include "IMusic.h"
 #include <QtWidgets/QApplication>
 
 int main(int argc, char *argv[])

@@ -1,4 +1,4 @@
-#include "imagethread.h"
+﻿#include "imagethread.h"
 
 ImageThread::ImageThread(QObject* parent)
 {

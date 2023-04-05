@@ -5,12 +5,20 @@
 #include <qfiledialog.h>
 #include <qdir.h>
 #include <qstandarditemmodel.h>
+#include <random>
 
 #include "ui_IMusic.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class IMusicClass; };
 QT_END_NAMESPACE
+
+enum pattern
+{
+	loop,
+	listloop,
+	randomloop
+};
 
 class IMusic : public QWidget
 {
@@ -23,8 +31,13 @@ public:
 	void init();
 	void open();
 	void play();
+	void pre();
 	void next();
+	void next(const int index);
+	void change();
+	const int random(const int n) const;
 	void changePage(const int& index);
+	void changePattern();
 	void onPositionChanged(qint64 pos);
 	void onDurationChanged(qint64 dur);
 private:
@@ -41,4 +54,6 @@ private:
 	bool isPlay = false;
 	bool isMute = false;
 	bool isFullScreen = false;
+
+	int p = 0;
 };

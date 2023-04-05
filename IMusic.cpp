@@ -36,14 +36,22 @@ void IMusic::init()
 	ui->tableView->setColumnWidth(0, 90);
 	ui->tableView->setColumnWidth(1, 70);
 	ui->tableView->setColumnWidth(2, 0);
+	ui->tableView->horizontalHeader()->setStyleSheet("QHeaderView::section{background-color:rgb(232, 171, 168);}");
+	ui->tableView->verticalHeader()->setStyleSheet("QHeaderView::section{background-color:rgb(232, 171, 168);}");
+	ui->tableView->verticalHeader()->setVisible(false);
 	ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	ui->volumebar->setValue(100);
 	player->setAudioOutput(output);
+	player->setLoops(QMediaPlayer::Infinite);
 	ImageThread* it = new ImageThread;
 
 	connect(ui->open, &QPushButton::clicked, this, &IMusic::open);
 	connect(ui->play, &QPushButton::clicked, this, &IMusic::play);
-	connect(ui->nextbtn, &QPushButton::clicked, this, &IMusic::next);
+	connect(ui->nextbtn, &QPushButton::clicked, this, [&]() {
+		next();
+		});
+	connect(ui->prebtn, &QPushButton::clicked, this, &IMusic::pre);
+	connect(player, &QMediaPlayer::playbackStateChanged, this, &IMusic::change);
 	connect(it, &ImageThread::freshImage, this, [&](int num) {
 		switch (num)
 		{
@@ -72,11 +80,12 @@ void IMusic::init()
 	connect(ui->tableView, &QTableView::doubleClicked, this, [&]() {
 		QString index = model->data(model->index(ui->tableView->currentIndex().row(), 2)).toString();
 		player->setSource(QUrl(index));
+		ui->name->setText(ui->tableView->currentIndex().data(0).toString());
 		player->play();
 		ui->play->setStyleSheet("border-image:url(:/IMusic/images/pause.png);");
 		});
 	connect(ui->timebar, &QSlider::sliderReleased, this, [&]() {
-		player->setPosition(ui->timebar->value());	
+		player->setPosition(ui->timebar->value());
 		});
 	connect(player, &QMediaPlayer::positionChanged, this, [&]() {
 		onPositionChanged(player->position());
@@ -90,9 +99,15 @@ void IMusic::init()
 	connect(ui->maxbtn, &QPushButton::clicked, this, [&]() {
 		isFullScreen = !isFullScreen;
 		if (isFullScreen)
+		{
 			this->showMaximized();
+			ui->maxbtn->setStyleSheet("border-image: url(:/IMusic/images/TitleBar/maximum_cancel.png);");
+		}
 		else
+		{
 			this->showNormal();
+			ui->maxbtn->setStyleSheet("border-image: url(:/IMusic/images/TitleBar/maximum.png);");
+		}
 		});
 	connect(ui->closebtn, &QPushButton::clicked, this, [&]() {
 		this->close();
@@ -124,7 +139,7 @@ void IMusic::init()
 	connect(ui->name, &QPushButton::clicked, this, [&]() {
 		QMessageBox::information(this, "歌曲名称", ui->name->text());
 		});
-
+	connect(ui->loopbtn, &QPushButton::clicked, this, &IMusic::changePattern);
 	it->start();
 }
 
@@ -148,6 +163,7 @@ void IMusic::play()
 	{
 		QString index = model->data(model->index(ui->tableView->currentIndex().row(), 2)).toString();
 		player->setSource(QUrl(index));
+		player->setLoops(QMediaPlayer::Infinite);
 	}
 	if (!isPlay)
 	{
@@ -162,21 +178,40 @@ void IMusic::play()
 	}
 }
 
+void IMusic::pre()
+{
+	int n = model->rowCount();
+	int preIndex = ui->tableView->currentIndex().row() - 1;
+	if (preIndex < 0)
+		preIndex = n - 1;
+	QString index = model->data(model->index(preIndex, 2)).toString();
+	ui->tableView->setCurrentIndex(model->index(preIndex, 0));
+	player->setSource(QUrl(index));
+	player->play();
+	ui->play->setStyleSheet("border-image:url(:/IMusic/images/pause.png);");
+}
+
 void IMusic::next()
 {
 	int n = model->rowCount();
 	int nextIndex = ui->tableView->currentIndex().row() + 1;
-	if (nextIndex > n)
-	{
-		player->setSource(QUrl(model->data(model->index(0, 2)).toString()));
-		ui->tableView->setCurrentIndex(model->index(0, 0));
-	}
-	else
-	{
-		QString index = model->data(model->index(nextIndex, 2)).toString();
-		player->setSource(QUrl(index));
-		ui->tableView->setCurrentIndex(model->index(nextIndex, 0));
-	}
+	if (nextIndex > n - 1)
+		nextIndex = 0;
+	QString index = model->data(model->index(nextIndex, 2)).toString();
+	player->setSource(QUrl(index));
+	ui->tableView->setCurrentIndex(model->index(nextIndex, 0));
+	player->play();
+	ui->name->setText(ui->tableView->currentIndex().data(0).toString());
+	ui->play->setStyleSheet("border-image:url(:/IMusic/images/pause.png);");
+}
+
+void IMusic::next(const int index)
+{
+	if (index < 0 || index >= model->rowCount())
+		return;
+	QString nextIndex = model->data(model->index(index, 2)).toString();
+	player->setSource(QUrl(nextIndex));
+	ui->tableView->setCurrentIndex(model->index(index, 0));
 	player->play();
 	ui->name->setText(ui->tableView->currentIndex().data(0).toString());
 	ui->play->setStyleSheet("border-image:url(:/IMusic/images/pause.png);");
@@ -185,6 +220,56 @@ void IMusic::next()
 void IMusic::changePage(const int& index)
 {
 	ui->stackedWidget->setCurrentIndex(index);
+}
+
+void IMusic::change()
+{
+	if (player->playbackState() == QMediaPlayer::StoppedState)
+	{
+		switch (p)
+		{
+		case listloop:
+			next();
+			break;
+		case randomloop:
+			next(random(model->rowCount()));
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+const int IMusic::random(const int n) const
+{
+	std::default_random_engine e;
+	e.seed(time(nullptr));
+	std::uniform_int_distribution<int> u(0, n - 1);
+	return u(e);
+}
+
+void IMusic::changePattern()
+{
+	++p;
+	if (p > randomloop)
+		p = loop;
+	switch (p)
+	{
+	case loop:
+		ui->loopbtn->setStyleSheet("border-image: url(:/IMusic/images/danqu.jpg);");
+		player->setLoops(QMediaPlayer::Infinite);
+		break;
+	case listloop:
+		ui->loopbtn->setStyleSheet("border-image: url(:/IMusic/images/loop.png);");
+		player->setLoops(QMediaPlayer::Once);
+		break;
+	case randomloop:
+		ui->loopbtn->setStyleSheet("border-image: url(:/IMusic/images/random.png);");
+		player->setLoops(QMediaPlayer::Once);
+		break;
+	default:
+		break;
+	}
 }
 
 void IMusic::onPositionChanged(qint64 pos)
