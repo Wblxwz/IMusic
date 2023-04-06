@@ -8,6 +8,7 @@
 
 #include <memory>
 #include "../../../IMusic.h"
+#include <QtNetwork/QSslError>
 #include <QtGui/qtextcursor.h>
 #include <QtCore/qbytearray.h>
 #include <QtCore/qmetatype.h>

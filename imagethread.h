@@ -1,6 +1,11 @@
 ﻿#pragma once
 
 #include <qthread.h>
+#include <unordered_map>
+#include <qurl.h>
+#include <qstandarditemmodel.h>
+
+#include "IMusic.h"
 
 class ImageThread :public QThread
 {

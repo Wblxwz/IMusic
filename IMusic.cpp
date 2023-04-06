@@ -1,6 +1,9 @@
 ﻿#include <qaudiooutput.h>
 #include <qurl.h>
 #include <qmessagebox.h>
+#include <qnetworkaccessmanager.h>
+#include <qnetworkrequest.h>
+#include <assert.h>
 
 #include "IMusic.h"
 #include "imagethread.h"
@@ -32,6 +35,13 @@ void IMusic::init()
 	model->setHeaderData(0, Qt::Horizontal, "歌名");
 	model->setHeaderData(1, Qt::Horizontal, "歌手");
 	model->setHeaderData(2, Qt::Horizontal, "本地路径");
+
+	model_2 = new QStandardItemModel;
+	model_2->setColumnCount(3);
+	model_2->setHeaderData(0, Qt::Horizontal, "歌名");
+	model_2->setHeaderData(1, Qt::Horizontal, "歌手");
+	model_2->setHeaderData(2, Qt::Horizontal, "ID");
+
 	ui->tableView->setModel(model);
 	ui->tableView->setColumnWidth(0, 90);
 	ui->tableView->setColumnWidth(1, 70);
@@ -40,13 +50,52 @@ void IMusic::init()
 	ui->tableView->verticalHeader()->setStyleSheet("QHeaderView::section{background-color:rgb(232, 171, 168);}");
 	ui->tableView->verticalHeader()->setVisible(false);
 	ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+	ui->searchlist->setModel(model_2);
+	ui->searchlist->setColumnWidth(0, 100);
+	ui->searchlist->setColumnWidth(1, 90);
+	ui->searchlist->setColumnWidth(2, 0);
+	ui->searchlist->horizontalHeader()->setStyleSheet("QHeaderView::section{background-color:rgb(232, 171, 168);}");
+	ui->searchlist->verticalHeader()->setStyleSheet("QHeaderView::section{background-color:rgb(232, 171, 168);}");
+	ui->searchlist->verticalHeader()->setVisible(false);
+	ui->searchlist->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
 	ui->volumebar->setValue(100);
+
 	player->setAudioOutput(output);
 	player->setLoops(QMediaPlayer::Infinite);
+
 	ImageThread* it = new ImageThread;
 
+	manager = new QNetworkAccessManager(this);
+	manager_2 = new QNetworkAccessManager(this);
+	request = new QNetworkRequest;
+	request_2 = new QNetworkRequest;
+
+	connect(manager, &QNetworkAccessManager::finished, this, &IMusic::replyFinished);
+	connect(manager_2, &QNetworkAccessManager::finished, this, &IMusic::replyFinished_2);
+
 	connect(ui->open, &QPushButton::clicked, this, &IMusic::open);
-	connect(ui->play, &QPushButton::clicked, this, &IMusic::play);
+	connect(ui->searchbtn, &QPushButton::clicked, this, &IMusic::search);
+	connect(ui->searchlist, &QTableView::doubleClicked, this, [&]() {
+		onlinePlay();
+		});
+	connect(ui->play, &QPushButton::clicked, this, [&]() {
+		QString name;
+		switch (ui->stackedWidget->currentIndex())
+		{
+		case 0:
+			name = ui->tableView->currentIndex().data(0).toString();
+			ui->name->setText(name);
+			break;
+		case 1:
+			name = ui->searchlist->currentIndex().data(0).toString();
+			break;
+		default:
+			break;
+		}
+		play();
+		});
 	connect(ui->nextbtn, &QPushButton::clicked, this, [&]() {
 		next();
 		});
@@ -79,10 +128,8 @@ void IMusic::init()
 		});
 	connect(ui->tableView, &QTableView::doubleClicked, this, [&]() {
 		QString index = model->data(model->index(ui->tableView->currentIndex().row(), 2)).toString();
-		player->setSource(QUrl(index));
 		ui->name->setText(ui->tableView->currentIndex().data(0).toString());
-		player->play();
-		ui->play->setStyleSheet("border-image:url(:/IMusic/images/pause.png);");
+		doublePlay(QUrl(index));
 		});
 	connect(ui->timebar, &QSlider::sliderReleased, this, [&]() {
 		player->setPosition(ui->timebar->value());
@@ -130,11 +177,19 @@ void IMusic::init()
 		changePage(0);
 		ui->faxianbtn->setStyleSheet("background-color:rgb(237,65,65);");
 		ui->liebiaobtn->setStyleSheet("");
+		ui->netbtn->setStyleSheet("");
+		});
+	connect(ui->netbtn, &QPushButton::clicked, this, [&]() {
+		changePage(1);
+		ui->netbtn->setStyleSheet("background-color:rgb(237,65,65);");
+		ui->faxianbtn->setStyleSheet("");
+		ui->liebiaobtn->setStyleSheet("");
 		});
 	connect(ui->liebiaobtn, &QPushButton::clicked, this, [&]() {
-		changePage(1);
+		changePage(2);
 		ui->liebiaobtn->setStyleSheet("background-color:rgb(237,65,65);");
 		ui->faxianbtn->setStyleSheet("");
+		ui->netbtn->setStyleSheet("");
 		});
 	connect(ui->name, &QPushButton::clicked, this, [&]() {
 		QMessageBox::information(this, "歌曲名称", ui->name->text());
@@ -156,20 +211,19 @@ void IMusic::open()
 	}
 }
 
+void IMusic::doublePlay(const QUrl& url)
+{
+	player->setSource(url);
+	player->play();
+	ui->play->setStyleSheet("border-image:url(:/IMusic/images/pause.png);");
+}
+
 void IMusic::play()
 {
-	isPlay = !isPlay;
-	if (player->playbackState() == player->StoppedState)
+	if (player->playbackState() == player->PausedState)
 	{
-		QString index = model->data(model->index(ui->tableView->currentIndex().row(), 2)).toString();
-		player->setSource(QUrl(index));
-		player->setLoops(QMediaPlayer::Infinite);
-	}
-	if (!isPlay)
-	{
-		ui->name->setText(ui->tableView->currentIndex().data(0).toString());
-		ui->play->setStyleSheet("border-image:url(:/IMusic/images/pause.png);");
 		player->play();
+		ui->play->setStyleSheet("border-image:url(:/IMusic/images/pause.png);");
 	}
 	else
 	{
@@ -180,28 +234,65 @@ void IMusic::play()
 
 void IMusic::pre()
 {
-	int n = model->rowCount();
-	int preIndex = ui->tableView->currentIndex().row() - 1;
-	if (preIndex < 0)
-		preIndex = n - 1;
-	QString index = model->data(model->index(preIndex, 2)).toString();
-	ui->tableView->setCurrentIndex(model->index(preIndex, 0));
-	player->setSource(QUrl(index));
+	int index = ui->stackedWidget->currentIndex();
+	int n = 0;
+	int preIndex = 0;
+	QString tindex;
+	if (index == 2)
+	{
+		n = model->rowCount();
+		preIndex = ui->tableView->currentIndex().row() - 1;
+		if (preIndex < 0)
+			preIndex = n - 1;
+		tindex = model->data(model->index(preIndex, 2)).toString();
+		player->setSource(QUrl(tindex));
+		ui->tableView->setCurrentIndex(model->index(preIndex, 0));
+	}
+	else
+	{
+		n = model_2->rowCount();
+		preIndex = ui->searchlist->currentIndex().row() - 1;
+		if (preIndex < 0)
+			preIndex = n - 1;
+		ui->searchlist->setCurrentIndex(model_2->index(preIndex, 0));
+		onlinePlay();
+		int id = ui->searchlist->currentIndex().data(2).toInt();
+		player->setSource(map[id]);
+	}
 	player->play();
 	ui->play->setStyleSheet("border-image:url(:/IMusic/images/pause.png);");
 }
 
 void IMusic::next()
 {
-	int n = model->rowCount();
-	int nextIndex = ui->tableView->currentIndex().row() + 1;
-	if (nextIndex > n - 1)
-		nextIndex = 0;
-	QString index = model->data(model->index(nextIndex, 2)).toString();
-	player->setSource(QUrl(index));
-	ui->tableView->setCurrentIndex(model->index(nextIndex, 0));
+	int index = ui->stackedWidget->currentIndex();
+	int n = 0;
+	int nextIndex = 0;
+	QString tindex;
+	if (index == 2)
+	{
+		n = model->rowCount();
+		nextIndex = ui->tableView->currentIndex().row() + 1;
+		if (nextIndex > n - 1)
+			nextIndex = 0;
+		tindex = model->data(model->index(nextIndex, 2)).toString();
+		ui->tableView->setCurrentIndex(model->index(nextIndex, 0));
+		ui->name->setText(ui->tableView->currentIndex().data(0).toString());
+		player->setSource(QUrl(tindex));
+	}
+	else
+	{
+		n = model_2->rowCount();
+		nextIndex = ui->searchlist->currentIndex().row() + 1;
+		if (nextIndex > n - 1)
+			nextIndex = 0;
+		ui->searchlist->setCurrentIndex(model_2->index(nextIndex, 0));
+		onlinePlay();
+		ui->name->setText(ui->searchlist->currentIndex().data(0).toString());
+		int id = ui->searchlist->currentIndex().data(2).toInt();
+		player->setSource(map[id]);
+	}
 	player->play();
-	ui->name->setText(ui->tableView->currentIndex().data(0).toString());
 	ui->play->setStyleSheet("border-image:url(:/IMusic/images/pause.png);");
 }
 
@@ -209,11 +300,24 @@ void IMusic::next(const int index)
 {
 	if (index < 0 || index >= model->rowCount())
 		return;
-	QString nextIndex = model->data(model->index(index, 2)).toString();
-	player->setSource(QUrl(nextIndex));
-	ui->tableView->setCurrentIndex(model->index(index, 0));
+	int cindex = ui->stackedWidget->currentIndex();
+	QString nextIndex;
+	if (cindex == 2)
+	{
+		nextIndex = model->data(model->index(index, 2)).toString();
+		ui->tableView->setCurrentIndex(model->index(index, 0));
+		ui->name->setText(ui->tableView->currentIndex().data(0).toString());
+		player->setSource(QUrl(nextIndex));
+	}
+	else
+	{
+		ui->searchlist->setCurrentIndex(model_2->index(index, 0));
+		onlinePlay();
+		ui->name->setText(ui->searchlist->currentIndex().data(0).toString());
+		int id = ui->searchlist->currentIndex().data(2).toInt();
+		player->setSource(map[id]);
+	}
 	player->play();
-	ui->name->setText(ui->tableView->currentIndex().data(0).toString());
 	ui->play->setStyleSheet("border-image:url(:/IMusic/images/pause.png);");
 }
 
@@ -292,4 +396,129 @@ void IMusic::onDurationChanged(qint64 dur)
 	secs = secs % 60;
 	durationTime = QString::asprintf("%d:%d", mins, secs);
 	ui->time->setText(positionTime + "/" + durationTime);
+}
+
+void IMusic::search()
+{
+	int count = model_2->rowCount();
+	model_2->removeRows(0, count);
+
+	QString content = QString("https://music-api.tonzhon.com/search?keyword=%1&platform=netease").arg(ui->searchedit->text());
+	request->setUrl(QUrl(content));
+	manager->get(*request);
+
+	/*content = QString("https://music-api.tonzhon.com/search?keyword=%1&platform=kuwo").arg(ui->searchedit->text());
+	request->setUrl(QUrl(content));
+	manager->get(*request);
+
+	content = QString("https://music-api.tonzhon.com/search?keyword=%1&platform=qq").arg(ui->searchedit->text());
+	request->setUrl(QUrl(content));
+	manager->get(*request);*/
+
+}
+
+void IMusic::onlinePlay()
+{
+	int index = ui->searchlist->currentIndex().row();
+	QString id = model_2->data(model_2->index(index, 2)).toString();
+	QString content = QString("https://music-api.tonzhon.com/song_source/netease/%1").arg(id);
+	request_2->setUrl(QUrl(content));
+	manager_2->get(*request_2);
+	ui->name->setText(ui->searchlist->currentIndex().data(0).toString());
+}
+
+void IMusic::parseJson(const QString& json)
+{
+	QString song_name, singername;
+	QJsonParseError json_error;
+	QJsonDocument document = QJsonDocument::fromJson(json.toUtf8(), &json_error);
+	if (json_error.error == QJsonParseError::NoError)
+	{
+		if (document.isObject())
+		{
+			QJsonObject rootObject = document.object();
+			QJsonValue rootValue = rootObject.value("data");
+			QJsonObject arrObject = rootValue.toObject();
+			QJsonValue arrValue = arrObject.value("songs");
+			if (arrValue.isArray())
+			{
+				QJsonArray array = arrValue.toArray();
+				for (int i = 0; i < array.size(); ++i)
+				{
+					QJsonObject songObject = array.at(i).toObject();
+					bool payment = songObject.value("requiringPayment").toBool();
+					int id = songObject.value("originalId").toInt();
+					singername.clear();
+					if (payment || id == 0)
+						continue;
+					QJsonValue artistsValue = songObject.value("artists");
+					QJsonArray artistsArray = artistsValue.toArray();
+					for (int i = 0; i < artistsArray.size(); ++i)
+					{
+						QJsonObject artistsNameObject = artistsArray.at(i).toObject();
+						QJsonValue artistsNameValue = artistsNameObject.value("name");
+						singername.append(artistsNameValue.toString() + " ");
+					}
+					song_name = songObject.value("name").toString();
+					QList<QStandardItem*> list;
+					list.append(new QStandardItem(song_name));
+					list.append(new QStandardItem(singername));
+					list.append(new QStandardItem(QString::number(id)));
+					model_2->appendRow(list);
+				}
+			}
+		}
+	}
+}
+
+void IMusic::parseJson_2(const QString& json)
+{
+	QJsonParseError error;
+	QJsonDocument document = QJsonDocument::fromJson(json.toUtf8(), &error);
+	if (error.error == QJsonParseError::NoError)
+	{
+		QJsonObject rootObject = document.object();
+		QJsonValue rootValue = rootObject.value("success");
+		if (rootValue.toBool() == false)
+		{
+			qDebug() << "false";
+			return;
+		}
+		QJsonValue dataValue = rootObject.value("data");
+		QJsonObject dataObject = dataValue.toObject();
+		QJsonValue songValue = dataObject.value("songSource");
+		int id = ui->searchlist->currentIndex().data(2).toInt();
+		neturl = songValue.toString();
+		map[id] = neturl;
+		doublePlay(neturl);
+	}
+}
+
+void IMusic::replyFinished(QNetworkReply* reply)
+{
+	QVariant status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
+	//assert(status_code.toString() == "200");
+	if (reply->error() == QNetworkReply::NoError)
+	{
+		QByteArray bytes = reply->readAll();
+		QString result(bytes);
+		//qDebug() << result;
+		parseJson(result);
+	}
+	else
+		QMessageBox::critical(this, "错误", "请稍后再试或等待当前错误修复");
+}
+
+void IMusic::replyFinished_2(QNetworkReply* reply)
+{
+	QVariant status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
+	if (reply->error() == QNetworkReply::NoError)
+	{
+		QByteArray bytes = reply->readAll();
+		QString result(bytes);
+		//qDebug() << result;
+		parseJson_2(result);
+	}
+	else
+		QMessageBox::critical(this, "错误", "请稍后再试或等待当前错误修复");
 }

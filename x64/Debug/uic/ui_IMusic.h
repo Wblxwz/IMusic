@@ -15,6 +15,7 @@
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
+#include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QSlider>
 #include <QtWidgets/QSpacerItem>
@@ -35,6 +36,13 @@ public:
     QSpacerItem *horizontalSpacer_5;
     QLabel *gundong;
     QSpacerItem *horizontalSpacer_6;
+    QWidget *page_3;
+    QGridLayout *gridLayout_2;
+    QSpacerItem *horizontalSpacer_9;
+    QLineEdit *searchedit;
+    QPushButton *searchbtn;
+    QSpacerItem *horizontalSpacer_10;
+    QTableView *searchlist;
     QWidget *page_2;
     QHBoxLayout *horizontalLayout_4;
     QTableView *tableView;
@@ -42,6 +50,7 @@ public:
     QWidget *widget_3;
     QVBoxLayout *verticalLayout;
     QPushButton *faxianbtn;
+    QPushButton *netbtn;
     QPushButton *liebiaobtn;
     QWidget *widget;
     QHBoxLayout *horizontalLayout;
@@ -73,7 +82,7 @@ public:
     {
         if (IMusicClass->objectName().isEmpty())
             IMusicClass->setObjectName(QString::fromUtf8("IMusicClass"));
-        IMusicClass->resize(1029, 616);
+        IMusicClass->resize(1029, 623);
         IMusicClass->setStyleSheet(QString::fromUtf8("background-color: rgb(232, 171, 168);"));
         gridLayout = new QGridLayout(IMusicClass);
         gridLayout->setSpacing(6);
@@ -105,6 +114,42 @@ public:
         horizontalLayout_3->addItem(horizontalSpacer_6);
 
         stackedWidget->addWidget(page);
+        page_3 = new QWidget();
+        page_3->setObjectName(QString::fromUtf8("page_3"));
+        gridLayout_2 = new QGridLayout(page_3);
+        gridLayout_2->setSpacing(6);
+        gridLayout_2->setContentsMargins(11, 11, 11, 11);
+        gridLayout_2->setObjectName(QString::fromUtf8("gridLayout_2"));
+        horizontalSpacer_9 = new QSpacerItem(287, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        gridLayout_2->addItem(horizontalSpacer_9, 0, 0, 1, 1);
+
+        searchedit = new QLineEdit(page_3);
+        searchedit->setObjectName(QString::fromUtf8("searchedit"));
+        searchedit->setMinimumSize(QSize(0, 25));
+
+        gridLayout_2->addWidget(searchedit, 0, 1, 1, 1);
+
+        searchbtn = new QPushButton(page_3);
+        searchbtn->setObjectName(QString::fromUtf8("searchbtn"));
+        searchbtn->setMinimumSize(QSize(25, 25));
+        searchbtn->setMaximumSize(QSize(25, 25));
+        searchbtn->setStyleSheet(QString::fromUtf8("border-image: url(:/IMusic/images/search.png);"));
+
+        gridLayout_2->addWidget(searchbtn, 0, 2, 1, 1);
+
+        horizontalSpacer_10 = new QSpacerItem(287, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        gridLayout_2->addItem(horizontalSpacer_10, 0, 3, 1, 1);
+
+        searchlist = new QTableView(page_3);
+        searchlist->setObjectName(QString::fromUtf8("searchlist"));
+        searchlist->setMinimumSize(QSize(200, 200));
+        searchlist->setMaximumSize(QSize(200, 16777215));
+
+        gridLayout_2->addWidget(searchlist, 1, 0, 1, 4);
+
+        stackedWidget->addWidget(page_3);
         page_2 = new QWidget();
         page_2->setObjectName(QString::fromUtf8("page_2"));
         horizontalLayout_4 = new QHBoxLayout(page_2);
@@ -142,6 +187,12 @@ public:
         faxianbtn->setStyleSheet(QString::fromUtf8("background-color: rgb(237, 65, 65);"));
 
         verticalLayout->addWidget(faxianbtn);
+
+        netbtn = new QPushButton(widget_3);
+        netbtn->setObjectName(QString::fromUtf8("netbtn"));
+        netbtn->setFont(font);
+
+        verticalLayout->addWidget(netbtn);
 
         liebiaobtn = new QPushButton(widget_3);
         liebiaobtn->setObjectName(QString::fromUtf8("liebiaobtn"));
@@ -323,8 +374,11 @@ public:
     {
         IMusicClass->setWindowTitle(QCoreApplication::translate("IMusicClass", "IMusic", nullptr));
         gundong->setText(QString());
+        searchedit->setPlaceholderText(QCoreApplication::translate("IMusicClass", "\350\257\267\350\276\223\345\205\245\346\255\214\346\233\262\345\220\215\347\247\260\346\210\226\346\255\214\346\211\213\345\220\215\347\247\260", nullptr));
+        searchbtn->setText(QString());
         faxianbtn->setText(QCoreApplication::translate("IMusicClass", "\345\217\221\347\216\260\351\237\263\344\271\220", nullptr));
-        liebiaobtn->setText(QCoreApplication::translate("IMusicClass", "\346\255\214\346\233\262\345\210\227\350\241\250", nullptr));
+        netbtn->setText(QCoreApplication::translate("IMusicClass", "\347\275\221\347\273\234\346\255\214\346\233\262", nullptr));
+        liebiaobtn->setText(QCoreApplication::translate("IMusicClass", "\346\234\254\345\234\260\346\255\214\346\233\262", nullptr));
         label->setText(QString());
         userbtn->setText(QString());
         label_2->setText(QString());
