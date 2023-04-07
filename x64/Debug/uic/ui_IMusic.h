@@ -11,6 +11,7 @@
 
 #include <QtCore/QVariant>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QComboBox>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
@@ -39,10 +40,11 @@ public:
     QWidget *page_3;
     QGridLayout *gridLayout_2;
     QSpacerItem *horizontalSpacer_9;
-    QLineEdit *searchedit;
     QPushButton *searchbtn;
     QSpacerItem *horizontalSpacer_10;
     QTableView *searchlist;
+    QLineEdit *searchedit;
+    QComboBox *huanyuan;
     QWidget *page_2;
     QHBoxLayout *horizontalLayout_4;
     QTableView *tableView;
@@ -56,7 +58,9 @@ public:
     QHBoxLayout *horizontalLayout;
     QLabel *label;
     QSpacerItem *horizontalSpacer;
+    QLabel *namelabel;
     QPushButton *userbtn;
+    QPushButton *skinbtn;
     QLabel *label_2;
     QPushButton *minbtn;
     QPushButton *maxbtn;
@@ -77,13 +81,14 @@ public:
     QPushButton *loopbtn;
     QPushButton *volumebtn;
     QSlider *volumebar;
+    QPushButton *versionbtn;
 
     void setupUi(QWidget *IMusicClass)
     {
         if (IMusicClass->objectName().isEmpty())
             IMusicClass->setObjectName(QString::fromUtf8("IMusicClass"));
         IMusicClass->resize(1029, 623);
-        IMusicClass->setStyleSheet(QString::fromUtf8("background-color: rgb(232, 171, 168);"));
+        IMusicClass->setStyleSheet(QString::fromUtf8(""));
         gridLayout = new QGridLayout(IMusicClass);
         gridLayout->setSpacing(6);
         gridLayout->setContentsMargins(11, 11, 11, 11);
@@ -124,30 +129,37 @@ public:
 
         gridLayout_2->addItem(horizontalSpacer_9, 0, 0, 1, 1);
 
-        searchedit = new QLineEdit(page_3);
-        searchedit->setObjectName(QString::fromUtf8("searchedit"));
-        searchedit->setMinimumSize(QSize(0, 25));
-
-        gridLayout_2->addWidget(searchedit, 0, 1, 1, 1);
-
         searchbtn = new QPushButton(page_3);
         searchbtn->setObjectName(QString::fromUtf8("searchbtn"));
         searchbtn->setMinimumSize(QSize(25, 25));
         searchbtn->setMaximumSize(QSize(25, 25));
         searchbtn->setStyleSheet(QString::fromUtf8("border-image: url(:/IMusic/images/search.png);"));
 
-        gridLayout_2->addWidget(searchbtn, 0, 2, 1, 1);
+        gridLayout_2->addWidget(searchbtn, 0, 4, 1, 1);
 
         horizontalSpacer_10 = new QSpacerItem(287, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
 
-        gridLayout_2->addItem(horizontalSpacer_10, 0, 3, 1, 1);
+        gridLayout_2->addItem(horizontalSpacer_10, 0, 5, 1, 1);
 
         searchlist = new QTableView(page_3);
         searchlist->setObjectName(QString::fromUtf8("searchlist"));
         searchlist->setMinimumSize(QSize(200, 200));
         searchlist->setMaximumSize(QSize(200, 16777215));
 
-        gridLayout_2->addWidget(searchlist, 1, 0, 1, 4);
+        gridLayout_2->addWidget(searchlist, 1, 0, 1, 6);
+
+        searchedit = new QLineEdit(page_3);
+        searchedit->setObjectName(QString::fromUtf8("searchedit"));
+        searchedit->setMinimumSize(QSize(0, 25));
+
+        gridLayout_2->addWidget(searchedit, 0, 2, 1, 1);
+
+        huanyuan = new QComboBox(page_3);
+        huanyuan->setObjectName(QString::fromUtf8("huanyuan"));
+        huanyuan->setMinimumSize(QSize(73, 20));
+        huanyuan->setMaximumSize(QSize(73, 20));
+
+        gridLayout_2->addWidget(huanyuan, 0, 1, 1, 1);
 
         stackedWidget->addWidget(page_3);
         page_2 = new QWidget();
@@ -223,6 +235,14 @@ public:
 
         horizontalLayout->addItem(horizontalSpacer);
 
+        namelabel = new QLabel(widget);
+        namelabel->setObjectName(QString::fromUtf8("namelabel"));
+        namelabel->setMinimumSize(QSize(100, 30));
+        namelabel->setMaximumSize(QSize(100, 30));
+        namelabel->setFont(font);
+
+        horizontalLayout->addWidget(namelabel);
+
         userbtn = new QPushButton(widget);
         userbtn->setObjectName(QString::fromUtf8("userbtn"));
         userbtn->setMinimumSize(QSize(20, 20));
@@ -230,10 +250,18 @@ public:
 
         horizontalLayout->addWidget(userbtn);
 
+        skinbtn = new QPushButton(widget);
+        skinbtn->setObjectName(QString::fromUtf8("skinbtn"));
+        skinbtn->setMinimumSize(QSize(25, 25));
+        skinbtn->setMaximumSize(QSize(25, 25));
+        skinbtn->setStyleSheet(QString::fromUtf8("border-image: url(:/IMusic/images/skin.png);"));
+
+        horizontalLayout->addWidget(skinbtn);
+
         label_2 = new QLabel(widget);
         label_2->setObjectName(QString::fromUtf8("label_2"));
-        label_2->setMinimumSize(QSize(60, 0));
-        label_2->setMaximumSize(QSize(60, 16777215));
+        label_2->setMinimumSize(QSize(30, 0));
+        label_2->setMaximumSize(QSize(30, 16777215));
 
         horizontalLayout->addWidget(label_2);
 
@@ -341,7 +369,7 @@ public:
         loopbtn->setObjectName(QString::fromUtf8("loopbtn"));
         loopbtn->setMinimumSize(QSize(30, 30));
         loopbtn->setMaximumSize(QSize(30, 30));
-        loopbtn->setStyleSheet(QString::fromUtf8("border-image: url(:/IMusic/images/danqu.jpg);"));
+        loopbtn->setStyleSheet(QString::fromUtf8("border-image: url(:/IMusic/images/danqu.png);"));
 
         horizontalLayout_2->addWidget(loopbtn);
 
@@ -357,6 +385,13 @@ public:
         volumebar->setOrientation(Qt::Horizontal);
 
         horizontalLayout_2->addWidget(volumebar);
+
+        versionbtn = new QPushButton(widget_2);
+        versionbtn->setObjectName(QString::fromUtf8("versionbtn"));
+        versionbtn->setMinimumSize(QSize(26, 18));
+        versionbtn->setMaximumSize(QSize(26, 18));
+
+        horizontalLayout_2->addWidget(versionbtn);
 
 
         gridLayout->addWidget(widget_2, 2, 0, 1, 2);
@@ -374,13 +409,15 @@ public:
     {
         IMusicClass->setWindowTitle(QCoreApplication::translate("IMusicClass", "IMusic", nullptr));
         gundong->setText(QString());
-        searchedit->setPlaceholderText(QCoreApplication::translate("IMusicClass", "\350\257\267\350\276\223\345\205\245\346\255\214\346\233\262\345\220\215\347\247\260\346\210\226\346\255\214\346\211\213\345\220\215\347\247\260", nullptr));
         searchbtn->setText(QString());
+        searchedit->setPlaceholderText(QCoreApplication::translate("IMusicClass", "\350\257\267\350\276\223\345\205\245\346\255\214\346\233\262\345\220\215\347\247\260\346\210\226\346\255\214\346\211\213\345\220\215\347\247\260", nullptr));
         faxianbtn->setText(QCoreApplication::translate("IMusicClass", "\345\217\221\347\216\260\351\237\263\344\271\220", nullptr));
         netbtn->setText(QCoreApplication::translate("IMusicClass", "\347\275\221\347\273\234\346\255\214\346\233\262", nullptr));
         liebiaobtn->setText(QCoreApplication::translate("IMusicClass", "\346\234\254\345\234\260\346\255\214\346\233\262", nullptr));
         label->setText(QString());
+        namelabel->setText(QString());
         userbtn->setText(QString());
+        skinbtn->setText(QString());
         label_2->setText(QString());
         minbtn->setText(QString());
         maxbtn->setText(QString());
@@ -393,6 +430,7 @@ public:
         nextbtn->setText(QString());
         loopbtn->setText(QString());
         volumebtn->setText(QString());
+        versionbtn->setText(QCoreApplication::translate("IMusicClass", "v1.0", nullptr));
     } // retranslateUi
 
 };

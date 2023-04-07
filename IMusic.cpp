@@ -4,9 +4,22 @@
 #include <qnetworkaccessmanager.h>
 #include <qnetworkrequest.h>
 #include <assert.h>
+#include <random>
+#include <qjsondocument.h>
+#include <qjsonobject.h>
+#include <qjsonarray.h>
+#include <qfiledialog.h>
+#include <qdir.h>
+#include <assert.h>
+#include <WinSock2.h>
+#include <WS2tcpip.h>
 
+#pragma comment (lib, "ws2_32.lib")
+
+#include "setting.h"
 #include "IMusic.h"
 #include "imagethread.h"
+#include "login.h"
 
 IMusic::IMusic(QWidget* parent)
 	: QWidget(parent)
@@ -22,6 +35,12 @@ IMusic::IMusic(QWidget* parent)
 IMusic::~IMusic()
 {
 	delete ui;
+	delete model, model_2;
+	delete player;
+	delete output;
+	delete manager, manager_2;
+	delete request, request_2;
+	delete set;
 }
 
 void IMusic::init()
@@ -29,6 +48,13 @@ void IMusic::init()
 	//this->setMinimumSize(1029, 673);
 	this->setFixedSize(1029, 616);
 	this->setWindowFlags(Qt::FramelessWindowHint);
+
+	WSADATA wsadata;
+	assert(WSAStartup(MAKEWORD(2, 2), &wsadata) == 0);
+
+	set = new QSettings("C:/IMusic/settings.ini", QSettings::IniFormat);
+	int cc = set->value("settings/skin").toString().toInt();
+	changeSkin(cc);
 
 	model = new QStandardItemModel;
 	model->setColumnCount(3);
@@ -60,12 +86,17 @@ void IMusic::init()
 	ui->searchlist->verticalHeader()->setVisible(false);
 	ui->searchlist->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
+	QStringList list;
+	list << "网易" << "酷我" << "QQ";
+	ui->huanyuan->addItems(list);
+
 	ui->volumebar->setValue(100);
 
 	player->setAudioOutput(output);
 	player->setLoops(QMediaPlayer::Infinite);
 
 	ImageThread* it = new ImageThread;
+	connect(it, &QThread::finished, it, &QThread::deleteLater);
 
 	manager = new QNetworkAccessManager(this);
 	manager_2 = new QNetworkAccessManager(this);
@@ -77,6 +108,16 @@ void IMusic::init()
 
 	connect(ui->open, &QPushButton::clicked, this, &IMusic::open);
 	connect(ui->searchbtn, &QPushButton::clicked, this, &IMusic::search);
+	connect(ui->versionbtn, &QPushButton::clicked, this, &IMusic::version);
+	connect(ui->userbtn, &QPushButton::clicked, this, &IMusic::log);
+	connect(ui->skinbtn, &QPushButton::clicked, this, [&]() {
+		setting* s = new setting(set->value("settings/skin").toString().toInt());
+		connect(s, &setting::sigChangeSkin, this, [&](color c) {
+			changeSkin(c);
+			set->setValue("settings/skin", c);
+			});
+		s->exec();
+		});
 	connect(ui->searchlist, &QTableView::doubleClicked, this, [&]() {
 		onlinePlay();
 		});
@@ -209,6 +250,7 @@ void IMusic::open()
 		model->setItem(i, 1, new QStandardItem("无"));
 		model->setItem(i, 2, new QStandardItem(lists[i]));
 	}
+	ui->stackedWidget->setCurrentIndex(2);
 }
 
 void IMusic::doublePlay(const QUrl& url)
@@ -344,6 +386,33 @@ void IMusic::change()
 	}
 }
 
+void IMusic::changeSkin(const int c)
+{
+	switch (c)
+	{
+	case moren:
+		this->setStyleSheet("background-color: rgb(232, 171, 168);");
+		break;
+	case huang:
+		this->setStyleSheet("background-color: rgb(255, 255, 153);");
+		break;
+	case bai:
+		this->setStyleSheet("background-color: rgb(255, 255, 255);");
+		break;
+	case lan:
+		this->setStyleSheet("background-color: rgb(153, 204, 255);");
+		break;
+	case lv:
+		this->setStyleSheet("background-color: rgb(153, 204, 0);");
+		break;
+	case hei:
+		this->setStyleSheet("background-color: rgb(51, 51, 51);");
+		break;
+	default:
+		break;
+	}
+}
+
 const int IMusic::random(const int n) const
 {
 	std::default_random_engine e;
@@ -360,7 +429,7 @@ void IMusic::changePattern()
 	switch (p)
 	{
 	case loop:
-		ui->loopbtn->setStyleSheet("border-image: url(:/IMusic/images/danqu.jpg);");
+		ui->loopbtn->setStyleSheet("border-image: url(:/IMusic/images/danqu.png);");
 		player->setLoops(QMediaPlayer::Infinite);
 		break;
 	case listloop:
@@ -398,6 +467,15 @@ void IMusic::onDurationChanged(qint64 dur)
 	ui->time->setText(positionTime + "/" + durationTime);
 }
 
+void IMusic::log()
+{
+	int cfd = getNewCfd();
+	QString name;
+	login* l = new login(cfd, name);
+	l->exec();
+	ui->namelabel->setText(name);
+}
+
 void IMusic::search()
 {
 	int count = model_2->rowCount();
@@ -415,6 +493,42 @@ void IMusic::search()
 	request->setUrl(QUrl(content));
 	manager->get(*request);*/
 
+}
+
+const int IMusic::getNewCfd()
+{
+	int cfd = socket(AF_INET, SOCK_STREAM, 0);
+	assert(cfd >= 0);
+
+	sockaddr_in	caddr;
+	caddr.sin_family = AF_INET;
+	caddr.sin_port = htons(8888);
+	inet_pton(AF_INET, "192.168.10.150", &caddr.sin_addr.S_un.S_addr);
+
+	int ret = ::connect(cfd, (sockaddr*)&caddr, sizeof(caddr));
+	assert(ret == 0);
+
+	return cfd;
+}
+
+void IMusic::version()
+{
+	int cfd = getNewCfd();
+
+	char buf[1024];
+	sprintf(buf, "version:%s", ui->versionbtn->text().toStdString().c_str());
+
+	char tbuf[50]{ '0' };
+
+	send(cfd, buf, sizeof(buf), NULL);
+	recv(cfd, tbuf, sizeof(tbuf), NULL);
+
+	if (QString(tbuf) == "true")
+		QMessageBox::information(this, "版本号检查", "当前已是最新版本");
+	else
+		QMessageBox::critical(this, "版本号检查", "当前已有更新版本，请前往官网更新");
+
+	closesocket(cfd);
 }
 
 void IMusic::onlinePlay()
@@ -479,15 +593,16 @@ void IMusic::parseJson_2(const QString& json)
 	{
 		QJsonObject rootObject = document.object();
 		QJsonValue rootValue = rootObject.value("success");
+		int id = ui->searchlist->currentIndex().data(2).toInt();
 		if (rootValue.toBool() == false)
 		{
-			qDebug() << "false";
+			QMessageBox::warning(this, "无法播放", "请稍后重试或等待修复");
+			model_2->removeRow(ui->searchlist->currentIndex().row());
 			return;
 		}
 		QJsonValue dataValue = rootObject.value("data");
 		QJsonObject dataObject = dataValue.toObject();
 		QJsonValue songValue = dataObject.value("songSource");
-		int id = ui->searchlist->currentIndex().data(2).toInt();
 		neturl = songValue.toString();
 		map[id] = neturl;
 		doublePlay(neturl);
@@ -521,4 +636,15 @@ void IMusic::replyFinished_2(QNetworkReply* reply)
 	}
 	else
 		QMessageBox::critical(this, "错误", "请稍后再试或等待当前错误修复");
+}
+
+void IMusic::mousePressEvent(QMouseEvent* event)
+{
+	clickPoint = event->pos();
+}
+
+void IMusic::mouseMoveEvent(QMouseEvent* event)
+{
+	QPoint delta = QPoint(event->pos().x() - clickPoint.x(), event->pos().y() - clickPoint.y());
+	this->move(QPoint(this->x() + delta.x(), this->y() + delta.y()));
 }

@@ -2,21 +2,26 @@
 
 #include <QtWidgets/QWidget>
 #include <qmediaplayer.h>
-#include <qfiledialog.h>
-#include <qdir.h>
 #include <qstandarditemmodel.h>
 #include <qnetworkreply.h>
-#include <random>
-#include <qjsondocument.h>
-#include <qjsonobject.h>
-#include <qjsonarray.h>
 #include <unordered_map>
+#include <qmouseevent>
+#include <qsettings.h>
 
 #include "ui_IMusic.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class IMusicClass; };
 QT_END_NAMESPACE
+
+/*ToDo:
+//歌词
+//切换源搜索
+//Love歌单
+
+//移动bug
+//列表循环 随机 模式bug
+*/
 
 enum pattern
 {
@@ -48,18 +53,25 @@ public:
 	void next();
 	void next(const int index);
 	void change();
+	void changeSkin(const int c);
 	const int random(const int n) const;
 	void changePage(const int& index);
 	void changePattern();
 	void onPositionChanged(qint64 pos);
 	void onDurationChanged(qint64 dur);
 
+	void log();
 	void search();
+	const int getNewCfd();
+	void version();
 	void onlinePlay();
 	void parseJson(const QString& json);
 	void parseJson_2(const QString& json);
 	void replyFinished(QNetworkReply* reply);
 	void replyFinished_2(QNetworkReply* reply);
+protected:
+	void mousePressEvent(QMouseEvent* event) override;
+	void mouseMoveEvent(QMouseEvent* event) override;
 private:
 	Ui::IMusicClass* ui;
 
@@ -69,13 +81,18 @@ private:
 	QAudioOutput* output;
 
 	QNetworkAccessManager* manager, * manager_2;
-	QNetworkRequest* request,* request_2;
+	QNetworkRequest* request, * request_2;
 
 	QString durationTime;
 	QString positionTime;
 
-	std::unordered_map<int, QUrl> map;
 	QUrl neturl;
+
+	QPoint clickPoint;
+
+	QSettings* set;
+
+	std::unordered_map<int, QUrl> map;
 
 	bool isMute = false;
 	bool isFullScreen = false;
