@@ -18,8 +18,11 @@ QT_END_NAMESPACE
 //酷我和QQ源 歌词
 //歌词匹配时间
 //Love歌单
+//本地歌曲 对我的最爱
+//本地歌曲记录？
 
 //移动bug
+//pre next 对我的最爱的bug
 */
 
 enum pattern
@@ -63,11 +66,14 @@ public:
 	const int getNewCfd();
 	void version();
 	void onlinePlay();
+	void myLove();
+	void addLove();
 
 	void parseJson(const QString& json);
 	void parseJson_2(const QString& json);
 	void parseJson_3(const QString& json);
 	void parseJson_4(const QString& json);
+	void myParseJson(const QString& json);
 
 	void replyFinished(QNetworkReply* reply);
 	void replyFinished_2(QNetworkReply* reply);
@@ -79,7 +85,7 @@ protected:
 private:
 	Ui::IMusicClass* ui;
 
-	QStandardItemModel* model, * model_2;
+	QStandardItemModel* model, * model_2, * model_3;
 	QMediaPlayer* player;
 	QStringList lists;
 	QAudioOutput* output;
@@ -105,4 +111,5 @@ private:
 	bool isFullScreen = false;
 
 	int p = 0;
+	int tindex = 0;
 };

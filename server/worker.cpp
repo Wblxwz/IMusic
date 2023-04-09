@@ -65,4 +65,35 @@ void Worker::work()
 			sprintf(ttbuf, "false");
 		send(cfd, ttbuf, sizeof(ttbuf), NULL);
 	}
+	if (s.find("love:") != -1)
+	{
+		std::string name;
+		for (int i = 5; i < s.size(); ++i)
+			name.push_back(s[i]);
+		char json[4096];
+		sql.getJson(conn, json, name.c_str());
+		send(cfd, json, sizeof(json), NULL);
+	}
+	if (s.find("addLove:") != -1)
+	{
+		std::string name, song, singer, id;
+		int songPos = s.find("song:");
+		int singerPos = s.find("singer:");
+		int idPos = s.find("id:");
+		for (int i = 8; i < songPos; ++i)
+			name.push_back(s[i]);
+		for (int i = songPos + 5; i < singerPos; ++i)
+			song.push_back(s[i]);
+		for (int i = singerPos + 7; i < idPos; ++i)
+			singer.push_back(s[i]);
+		for (int i = idPos + 3; i < s.size(); ++i)
+			id.push_back(s[i]);
+		bool ret = sql.addLove(conn, name.c_str(), id.c_str(), song.c_str(), singer.c_str());
+		char buf[10];
+		if (ret)
+			sprintf(buf, "true");
+		else
+			sprintf(buf, "false");
+		send(cfd, buf, sizeof(buf), NULL);
+	}
 }

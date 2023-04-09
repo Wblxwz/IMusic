@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <WinSock2.h>
 #include <WS2tcpip.h>
+#include <qregularexpression.h>
 
 #pragma comment (lib, "ws2_32.lib")
 
@@ -62,6 +63,9 @@ void IMusic::init()
 	output->setVolume(initvolume);
 	ui->volumebar->setValue(initvolume * 100);
 
+	ui->geci->setPlainText("推荐使用网易云搜索");
+	ui->geci->setAlignment(Qt::AlignCenter);
+
 	model = new QStandardItemModel;
 	model->setColumnCount(3);
 	model->setHeaderData(0, Qt::Horizontal, "歌名");
@@ -73,6 +77,12 @@ void IMusic::init()
 	model_2->setHeaderData(0, Qt::Horizontal, "歌名");
 	model_2->setHeaderData(1, Qt::Horizontal, "歌手");
 	model_2->setHeaderData(2, Qt::Horizontal, "ID");
+
+	model_3 = new QStandardItemModel;
+	model_3->setColumnCount(3);
+	model_3->setHeaderData(0, Qt::Horizontal, "歌名");
+	model_3->setHeaderData(1, Qt::Horizontal, "歌手");
+	model_3->setHeaderData(2, Qt::Horizontal, "ID");
 
 	ui->tableView->setModel(model);
 	ui->tableView->setColumnWidth(0, 400);
@@ -91,6 +101,16 @@ void IMusic::init()
 	ui->searchlist->verticalHeader()->setStyleSheet("QHeaderView::section{background-color:rgb(232, 171, 168);}");
 	ui->searchlist->verticalHeader()->setVisible(false);
 	ui->searchlist->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+
+	ui->loves->setModel(model_3);
+	ui->loves->setColumnWidth(0, 200);
+	ui->loves->setColumnWidth(1, 90);
+	ui->loves->setColumnWidth(2, 0);
+	ui->loves->horizontalHeader()->setStyleSheet("QHeaderView::section{background-color:rgb(232, 171, 168);}");
+	ui->loves->verticalHeader()->setStyleSheet("QHeaderView::section{background-color:rgb(232, 171, 168);}");
+	ui->loves->verticalHeader()->setVisible(false);
+	ui->loves->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
 	QStringList list;
 	list << "网易云" << "酷我" << "QQ";
@@ -141,15 +161,25 @@ void IMusic::init()
 	connect(ui->searchbtn, &QPushButton::clicked, this, &IMusic::search);
 	connect(ui->versionbtn, &QPushButton::clicked, this, &IMusic::version);
 	connect(ui->userbtn, &QPushButton::clicked, this, &IMusic::log);
+	connect(ui->lovebtn, &QPushButton::clicked, this, &IMusic::myLove);
+	connect(ui->hongxinbtn, &QPushButton::clicked, this, &IMusic::addLove);
+
 	connect(ui->commentbtn, &QPushButton::clicked, this, [&]() {
-		QString content = QString("http://music.163.com/api/v1/resource/comments/R_SO_4_%1?limit=50&offset=0").arg(model_2->index(ui->searchlist->currentIndex().row(), 2).data(2).toInt());
+		QString content;
+		if(ui->stackedWidget->currentIndex() == 1)
+			content = QString("http://music.163.com/api/v1/resource/comments/R_SO_4_%1?limit=50&offset=0").arg(model_2->index(ui->searchlist->currentIndex().row(), 2).data(2).toInt());
+		else
+			content = QString("http://music.163.com/api/v1/resource/comments/R_SO_4_%1?limit=50&offset=0").arg(model_3->index(ui->loves->currentIndex().row(), 2).data(2).toInt());
 		request_4->setUrl(content);
 		manager_4->get(*request_4);
 		isComment = !isComment;
 		if (isComment)
+		{
+			tindex = ui->stackedWidget->currentIndex();
 			ui->stackedWidget->setCurrentIndex(3);
+		}
 		else
-			ui->stackedWidget->setCurrentIndex(1);
+			ui->stackedWidget->setCurrentIndex(tindex);
 		});
 	connect(ui->skinbtn, &QPushButton::clicked, this, [&]() {
 		setting* s = new setting(set->value("settings/skin").toString().toInt());
@@ -228,8 +258,11 @@ void IMusic::init()
 	connect(ui->tableView, &QTableView::doubleClicked, this, [&]() {
 		QString index = model->data(model->index(ui->tableView->currentIndex().row(), 2)).toString();
 		songname = ui->tableView->currentIndex().data(0).toString();
-		ui->name->setText(elideFont.elidedText(ui->tableView->currentIndex().data(0).toString(), Qt::ElideRight, ui->name->width()));
+		ui->name->setText(elideFont.elidedText(songname, Qt::ElideRight, ui->name->width()));
 		doublePlay(QUrl(index));
+		});
+	connect(ui->loves, &QTableView::doubleClicked, this, [&]() {
+		onlinePlay();
 		});
 	connect(ui->timebar, &QSlider::sliderReleased, this, [&]() {
 		player->setPosition(ui->timebar->value());
@@ -283,18 +316,21 @@ void IMusic::init()
 		ui->faxianbtn->setStyleSheet("background-color:rgb(237,65,65);");
 		ui->liebiaobtn->setStyleSheet("");
 		ui->netbtn->setStyleSheet("");
+		ui->lovebtn->setStyleSheet("");
 		});
 	connect(ui->netbtn, &QPushButton::clicked, this, [&]() {
 		changePage(1);
 		ui->netbtn->setStyleSheet("background-color:rgb(237,65,65);");
 		ui->faxianbtn->setStyleSheet("");
 		ui->liebiaobtn->setStyleSheet("");
+		ui->lovebtn->setStyleSheet("");
 		});
 	connect(ui->liebiaobtn, &QPushButton::clicked, this, [&]() {
 		changePage(2);
 		ui->liebiaobtn->setStyleSheet("background-color:rgb(237,65,65);");
 		ui->faxianbtn->setStyleSheet("");
 		ui->netbtn->setStyleSheet("");
+		ui->lovebtn->setStyleSheet("");
 		});
 	connect(ui->name, &QPushButton::clicked, this, [&]() {
 		QMessageBox::information(this, "歌曲名称", songname);
@@ -328,8 +364,17 @@ void IMusic::doublePlay(const QUrl& url)
 		request_3->setUrl(geci);
 		manager_3->get(*request_3);
 	}
+	else if (ui->stackedWidget->currentIndex() == 4)
+	{
+		QString geci = QString("https://music.163.com/api/song/lyric?id=%1&lv=1&kv=1&tv=-1").arg(model_3->index(ui->loves->currentIndex().row(), 2).data(2).toInt());
+		request_3->setUrl(geci);
+		manager_3->get(*request_3);
+	}
 	else
+	{
 		ui->geci->setPlainText("该播放源暂不支持歌词搜索");
+		ui->geci->setAlignment(Qt::AlignCenter);
+	}
 }
 
 void IMusic::play()
@@ -596,7 +641,7 @@ const int IMusic::getNewCfd()
 	assert(cfd >= 0);
 
 	unsigned long ul = 0;
-	cfd = ioctlsocket(cfd, FIONBIO, static_cast<unsigned long*>(&ul));
+	//cfd = ioctlsocket(cfd, FIONBIO, static_cast<unsigned long*>(&ul));
 
 	sockaddr_in	caddr;
 	caddr.sin_family = AF_INET;
@@ -635,28 +680,140 @@ void IMusic::version()
 
 void IMusic::onlinePlay()
 {
-	int index = ui->searchlist->currentIndex().row();
-	QString id = model_2->data(model_2->index(index, 2)).toString();
+	int index = 0;
+	QString id;
 	QString content;
-	switch (ui->huanyuan->currentIndex())
+	if (ui->stackedWidget->currentIndex() == 1)
 	{
-	case 0:
-		content = QString("https://music-api.tonzhon.com/song_source/netease/%1").arg(id);
-		break;
+		index = ui->searchlist->currentIndex().row();
+		id = model_2->data(model_2->index(index, 2)).toString();
+		switch (ui->huanyuan->currentIndex())
+		{
+		case 0:
+			content = QString("https://music-api.tonzhon.com/song_source/netease/%1").arg(id);
+			break;
+		case 1:
+			content = QString("https://music-api.tonzhon.com/song_source/kuwo/%1").arg(id);
+			break;
+		case 2:
+			content = QString("https://music-api.tonzhon.com/song_source/qq/%1").arg(id);
+			break;
+		default:
+			break;
+		}
+	}
+	else
+	{
+		index = ui->loves->currentIndex().row();
+		id = model_3->data(model_3->index(index, 2)).toString();
+		std::string tname = model_3->data(model_3->index(index, 0)).toString().toStdString();
+		if(tname.find("网易云") != -1)
+			content = QString("https://music-api.tonzhon.com/song_source/netease/%1").arg(id);
+		else if(tname.find("QQ") != -1)
+			content = QString("https://music-api.tonzhon.com/song_source/qq/%1").arg(id);
+		else if(tname.find("酷我") != -1)
+			content = QString("https://music-api.tonzhon.com/song_source/kuwo/%1").arg(id);
+	}
+	
+	request_2->setUrl(QUrl(content));
+	manager_2->get(*request_2);
+	QFontMetrics elideFont(ui->name->font());
+	if(ui->stackedWidget->currentIndex() == 1)
+	{
+		songname = ui->searchlist->currentIndex().data(0).toString();
+		ui->name->setText(elideFont.elidedText(songname, Qt::ElideRight, ui->name->width()));
+	}
+	else
+	{
+		songname = ui->loves->currentIndex().data(0).toString();
+		ui->name->setText(elideFont.elidedText(songname, Qt::ElideRight, ui->name->width()));
+	}
+}
+
+void IMusic::myLove()
+{
+	if (ui->namelabel->text() == "请登录")
+	{
+		QMessageBox::critical(this, "获取歌单失败", "请先登录");
+		return;
+	}
+	changePage(4);
+	ui->faxianbtn->setStyleSheet("");
+	ui->liebiaobtn->setStyleSheet("");
+	ui->netbtn->setStyleSheet("");
+	ui->lovebtn->setStyleSheet("background-color:rgb(237,65,65);");
+	int count = model_3->rowCount();
+	model_3->removeRows(0, count);
+	int cfd = getNewCfd();
+	char buf[50];
+	sprintf(buf, "love:");
+	sprintf(buf + strlen(buf), ui->namelabel->text().toStdString().c_str());
+	int ret = send(cfd, buf, sizeof(buf), NULL);
+	char jsonBuf[4096];
+	recv(cfd, jsonBuf, sizeof(jsonBuf), NULL);
+	myParseJson(jsonBuf);
+}
+
+void IMusic::addLove()
+{
+	if (ui->namelabel->text() == "请登录")
+	{
+		QMessageBox::critical(this, "错误", "请登录后再添加");
+		return;
+	}
+	if (ui->stackedWidget->currentIndex() == 2)
+		QMessageBox::warning(this, "抱歉", "本地歌曲暂不支持添加至我的最爱");
+	/*if (ui->huanyuan->currentIndex() != 0)
+	{
+		QMessageBox::critical(this, "错误", "除网易云外暂不支持添加至我的最爱");
+		return;
+	}*/
+	int cfd = getNewCfd();
+	char buf[1024];
+	sprintf(buf, "addLove:");
+	QString name, id, song, singer;
+	switch (ui->stackedWidget->currentIndex())
+	{
 	case 1:
-		content = QString("https://music-api.tonzhon.com/song_source/kuwo/%1").arg(id);
+		if (ui->huanyuan->currentIndex() == 1)
+			song = ("酷我");
+		else if (ui->huanyuan->currentIndex() == 2)
+			song = ("QQ");
+		else
+			song = ("网易云");
+		song += model_2->index(ui->searchlist->currentIndex().row(), 0).data(0).toString();
+		singer = model_2->index(ui->searchlist->currentIndex().row(), 1).data(0).toString();
+		id = model_2->index(ui->searchlist->currentIndex().row(), 2).data(0).toString();
 		break;
 	case 2:
-		content = QString("https://music-api.tonzhon.com/song_source/qq/%1").arg(id);
+		song = "本地";
+		song += model->index(ui->tableView->currentIndex().row(), 0).data(0).toString();
+		singer = model->index(ui->tableView->currentIndex().row(), 1).data(0).toString();
+		id = model->index(ui->tableView->currentIndex().row(), 2).data(0).toString();
 		break;
 	default:
 		break;
 	}
-	request_2->setUrl(QUrl(content));
-	manager_2->get(*request_2);
-	QFontMetrics elideFont(ui->name->font());
-	songname = ui->searchlist->currentIndex().data(0).toString();
-	ui->name->setText(elideFont.elidedText(ui->searchlist->currentIndex().data(0).toString(), Qt::ElideRight, ui->name->width()));
+	sprintf(buf + strlen(buf), ui->namelabel->text().toStdString().c_str());
+	sprintf(buf + strlen(buf), "song:");
+	sprintf(buf + strlen(buf), song.toStdString().c_str());
+	sprintf(buf + strlen(buf), "singer:");
+	sprintf(buf + strlen(buf), singer.toStdString().c_str());
+	sprintf(buf + strlen(buf), "id:");
+	sprintf(buf + strlen(buf), id.toStdString().c_str());
+	send(cfd, buf, sizeof(buf), NULL);
+	char tbuf[10];
+	recv(cfd, tbuf, sizeof(tbuf), NULL);
+	QString s(tbuf);
+	if (s == "true")
+	{
+		QMessageBox::information(this, "添加成功", "已添加至我的最爱");
+		myLove();
+	}
+	else
+	{
+		QMessageBox::information(this, "添加失败", "请等待服务器修复");
+	}
 }
 
 void IMusic::parseJson(const QString& json)
@@ -718,7 +875,6 @@ void IMusic::parseJson(const QString& json)
 					else
 						list.append(new QStandardItem(QString::number(id)));
 					model_2->appendRow(list);
-					//qDebug() << model_2->rowCount();
 					if (model_2->rowCount() == 0)
 						model_2->appendRow(new QStandardItem("没有搜索到数据,请换源重试"));
 				}
@@ -771,7 +927,36 @@ void IMusic::parseJson_3(const QString& json)
 		QJsonValue rootValue = rootObject.value("lrc");
 		QJsonObject lrcObject = rootValue.toObject();
 		QJsonValue lrcValue = lrcObject.value("lyric");
-		ui->geci->setPlainText(lrcValue.toString());
+		QString lrc = lrcValue.toString();
+
+		QRegularExpression express("[[0-9:.]*]");
+		lrc.replace(express, "");
+		if (ui->stackedWidget->currentIndex() == 1)
+		{
+			if (lrc != "")
+			{
+				ui->geci->setPlainText(lrc);
+				ui->geci->document()->setDefaultTextOption(QTextOption(Qt::AlignHCenter));
+			}
+			else
+			{
+				ui->geci->setPlainText("未找到当前歌曲歌词");
+				ui->geci->setAlignment(Qt::AlignCenter);
+			}
+		}
+		else if (ui->stackedWidget->currentIndex() == 4)
+		{
+			if (lrc != "")
+			{
+				ui->geci_2->setPlainText(lrc);
+				ui->geci_2->document()->setDefaultTextOption(QTextOption(Qt::AlignHCenter));
+			}
+			else
+			{
+				ui->geci_2->setPlainText("未找到当前歌曲歌词");
+				ui->geci_2->setAlignment(Qt::AlignCenter);
+			}
+		}
 	}
 }
 
@@ -801,6 +986,35 @@ void IMusic::parseJson_4(const QString& json)
 		}
 		if (ui->huanyuan->currentIndex() != 0)
 			ui->comments->setPlainText("该播放源暂不支持评论查看");
+	}
+}
+
+void IMusic::myParseJson(const QString& json)
+{
+	QJsonParseError error;
+	QJsonDocument document = QJsonDocument::fromJson(json.toUtf8(), &error);
+	if (error.error == QJsonParseError::NoError)
+	{
+		QJsonObject rootObject = document.object();
+		QJsonValue rootValue = rootObject.value("data");
+		if (rootValue.isArray())
+		{
+			QJsonArray array = rootValue.toArray();
+			for (int i = 0; i < array.size(); ++i)
+			{
+				QJsonObject listObject = array.at(i).toObject();
+				QJsonValue id = listObject.value("id");
+				QJsonValue song = listObject.value("song");
+				QJsonValue singer = listObject.value("singer");
+
+				QList<QStandardItem*> list;
+				list << new QStandardItem(song.toString());
+				list << new QStandardItem(singer.toString());
+				list << new QStandardItem(id.toString());
+
+				model_3->appendRow(list);
+			}
+		}
 	}
 }
 
@@ -843,7 +1057,10 @@ void IMusic::replyFinished_3(QNetworkReply* reply)
 		parseJson_3(result);
 	}
 	else
+	{
 		ui->geci->setPlainText("未找到歌词");
+		ui->geci->setAlignment(Qt::AlignCenter);
+	}
 }
 
 void IMusic::replyFinished_4(QNetworkReply* reply)

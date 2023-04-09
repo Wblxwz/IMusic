@@ -5,7 +5,7 @@
 #include "setting.h"
 #include "login.h"
 
-login::login(const int cfd,QString& name, QWidget* parent)
+login::login(const int cfd, QString& name, QWidget* parent)
 	: QDialog(parent)
 	, ui(new Ui::loginClass())
 {
@@ -13,6 +13,12 @@ login::login(const int cfd,QString& name, QWidget* parent)
 
 	QSettings* set = new QSettings("C:/IMusic/settings.ini", QSettings::IniFormat);
 	int cc = set->value("settings/skin").toString().toInt();
+	QString pastName, pastPwd;
+	pastName = set->value("settings/name").toString();
+	pastPwd = set->value("settings/pwd").toString();
+	ui->name->setText(pastName);
+	ui->pwd->setText(pastPwd);
+
 	switch (cc)
 	{
 	case moren:
@@ -48,6 +54,9 @@ login::login(const int cfd,QString& name, QWidget* parent)
 		if (ts == "true")
 		{
 			name = ui->name->text();
+			QSettings* sett = new QSettings("C:/IMusic/settings.ini", QSettings::IniFormat);
+			sett->setValue("settings/name", ui->name->text());
+			sett->setValue("settings/pwd", ui->pwd->text());
 			QMessageBox::information(this, "登录成功", "登录成功！");
 		}
 		else
@@ -56,6 +65,8 @@ login::login(const int cfd,QString& name, QWidget* parent)
 		this->close();
 		});
 	connect(ui->zhucebtn, &QPushButton::clicked, this, [&]() {
+		if (ui->name->text() == "" || ui->pwd->text() == "")
+			QMessageBox::critical(this, "注册失败", "请检查输入后重试");
 		char buf[1024];
 		sprintf(buf, "signup:%s", ui->name->text().toStdString().c_str());
 		sprintf(buf + strlen(buf), "signpwd:%s", ui->pwd->text().toStdString().c_str());

@@ -19,7 +19,7 @@ MYSQL* ConnPool::getConn()
 	deque.pop_front();
 	--freecon;
 	++curconn;
-	std::cout << "getConnection" << std::endl;
+	//std::cout << "getConnection" << std::endl;
 	return sql;
 }
 
@@ -32,7 +32,7 @@ bool ConnPool::releaseConn(MYSQL* conn)
 	++freecon;
 	--curconn;
 	sem_post(&sem);
-	std::cout << "releaseConnection" << std::endl;
+	//std::cout << "releaseConnection" << std::endl;
 	return true;
 }
 

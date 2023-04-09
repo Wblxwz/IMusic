@@ -23,6 +23,7 @@
 #include <QtWidgets/QSpacerItem>
 #include <QtWidgets/QStackedWidget>
 #include <QtWidgets/QTableView>
+#include <QtWidgets/QTextEdit>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
@@ -48,6 +49,7 @@ public:
     QPushButton *faxianbtn;
     QPushButton *netbtn;
     QPushButton *liebiaobtn;
+    QPushButton *lovebtn;
     QStackedWidget *stackedWidget;
     QWidget *page;
     QHBoxLayout *horizontalLayout_3;
@@ -64,7 +66,7 @@ public:
     QWidget *widget_4;
     QGridLayout *gridLayout_2;
     QTableView *searchlist;
-    QPlainTextEdit *geci;
+    QTextEdit *geci;
     QWidget *page_2;
     QHBoxLayout *horizontalLayout_4;
     QTableView *tableView;
@@ -74,6 +76,12 @@ public:
     QPlainTextEdit *comments;
     QPlainTextEdit *usercomment;
     QPushButton *commitbtn;
+    QWidget *page_5;
+    QGridLayout *gridLayout_6;
+    QWidget *widget_6;
+    QGridLayout *gridLayout_5;
+    QTableView *loves;
+    QTextEdit *geci_2;
     QWidget *widget_2;
     QHBoxLayout *horizontalLayout_2;
     QPushButton *name;
@@ -88,6 +96,7 @@ public:
     QSpacerItem *horizontalSpacer_8;
     QPushButton *nextbtn;
     QSpacerItem *horizontalSpacer_2;
+    QPushButton *hongxinbtn;
     QPushButton *loopbtn;
     QPushButton *volumebtn;
     QSlider *volumebar;
@@ -131,6 +140,7 @@ public:
         QFont font;
         font.setPointSize(11);
         namelabel->setFont(font);
+        namelabel->setAlignment(Qt::AlignCenter);
 
         horizontalLayout->addWidget(namelabel);
 
@@ -206,6 +216,12 @@ public:
         liebiaobtn->setFont(font);
 
         verticalLayout->addWidget(liebiaobtn);
+
+        lovebtn = new QPushButton(widget_3);
+        lovebtn->setObjectName(QString::fromUtf8("lovebtn"));
+        lovebtn->setFont(font);
+
+        verticalLayout->addWidget(lovebtn);
 
 
         gridLayout->addWidget(widget_3, 1, 0, 1, 1);
@@ -283,10 +299,10 @@ public:
 
         gridLayout_2->addWidget(searchlist, 0, 0, 1, 1);
 
-        geci = new QPlainTextEdit(widget_4);
+        geci = new QTextEdit(widget_4);
         geci->setObjectName(QString::fromUtf8("geci"));
-        geci->setMinimumSize(QSize(600, 400));
-        geci->setMaximumSize(QSize(600, 400));
+        geci->setMinimumSize(QSize(680, 400));
+        geci->setMaximumSize(QSize(680, 400));
         QFont font1;
         font1.setPointSize(15);
         geci->setFont(font1);
@@ -342,6 +358,37 @@ public:
         gridLayout_4->addWidget(commitbtn, 1, 1, 1, 1);
 
         stackedWidget->addWidget(page_4);
+        page_5 = new QWidget();
+        page_5->setObjectName(QString::fromUtf8("page_5"));
+        gridLayout_6 = new QGridLayout(page_5);
+        gridLayout_6->setSpacing(6);
+        gridLayout_6->setContentsMargins(11, 11, 11, 11);
+        gridLayout_6->setObjectName(QString::fromUtf8("gridLayout_6"));
+        widget_6 = new QWidget(page_5);
+        widget_6->setObjectName(QString::fromUtf8("widget_6"));
+        gridLayout_5 = new QGridLayout(widget_6);
+        gridLayout_5->setSpacing(6);
+        gridLayout_5->setContentsMargins(11, 11, 11, 11);
+        gridLayout_5->setObjectName(QString::fromUtf8("gridLayout_5"));
+        loves = new QTableView(widget_6);
+        loves->setObjectName(QString::fromUtf8("loves"));
+        loves->setMinimumSize(QSize(200, 200));
+        loves->setMaximumSize(QSize(200, 400));
+
+        gridLayout_5->addWidget(loves, 0, 0, 1, 1);
+
+        geci_2 = new QTextEdit(widget_6);
+        geci_2->setObjectName(QString::fromUtf8("geci_2"));
+        geci_2->setMinimumSize(QSize(680, 400));
+        geci_2->setMaximumSize(QSize(680, 400));
+        geci_2->setFont(font1);
+
+        gridLayout_5->addWidget(geci_2, 0, 1, 1, 1);
+
+
+        gridLayout_6->addWidget(widget_6, 0, 0, 1, 1);
+
+        stackedWidget->addWidget(page_5);
 
         gridLayout->addWidget(stackedWidget, 1, 1, 1, 1);
 
@@ -427,6 +474,14 @@ public:
 
         horizontalLayout_2->addItem(horizontalSpacer_2);
 
+        hongxinbtn = new QPushButton(widget_2);
+        hongxinbtn->setObjectName(QString::fromUtf8("hongxinbtn"));
+        hongxinbtn->setMinimumSize(QSize(30, 30));
+        hongxinbtn->setMaximumSize(QSize(30, 30));
+        hongxinbtn->setStyleSheet(QString::fromUtf8("border-image: url(:/IMusic/images/love.png);"));
+
+        horizontalLayout_2->addWidget(hongxinbtn);
+
         loopbtn = new QPushButton(widget_2);
         loopbtn->setObjectName(QString::fromUtf8("loopbtn"));
         loopbtn->setMinimumSize(QSize(30, 30));
@@ -471,7 +526,7 @@ public:
     {
         IMusicClass->setWindowTitle(QCoreApplication::translate("IMusicClass", "IMusic", nullptr));
         label->setText(QString());
-        namelabel->setText(QString());
+        namelabel->setText(QCoreApplication::translate("IMusicClass", "\350\257\267\347\231\273\345\275\225", nullptr));
         userbtn->setText(QString());
         skinbtn->setText(QString());
         label_2->setText(QString());
@@ -481,13 +536,15 @@ public:
         faxianbtn->setText(QCoreApplication::translate("IMusicClass", "\345\217\221\347\216\260\351\237\263\344\271\220", nullptr));
         netbtn->setText(QCoreApplication::translate("IMusicClass", "\347\275\221\347\273\234\346\255\214\346\233\262", nullptr));
         liebiaobtn->setText(QCoreApplication::translate("IMusicClass", "\346\234\254\345\234\260\346\255\214\346\233\262", nullptr));
+        lovebtn->setText(QCoreApplication::translate("IMusicClass", "\346\210\221\347\232\204\346\234\200\347\210\261", nullptr));
         gundong->setText(QString());
         searchedit->setPlaceholderText(QCoreApplication::translate("IMusicClass", "\350\257\267\350\276\223\345\205\245\346\255\214\346\233\262\345\220\215\347\247\260\346\210\226\346\255\214\346\211\213\345\220\215\347\247\260", nullptr));
         searchbtn->setText(QString());
-        geci->setPlainText(QCoreApplication::translate("IMusicClass", "\346\216\250\350\215\220\344\275\277\347\224\250\347\275\221\346\230\223\344\272\221\346\220\234\347\264\242", nullptr));
+        geci->setPlaceholderText(QString());
         comments->setPlainText(QString());
         usercomment->setPlaceholderText(QCoreApplication::translate("IMusicClass", "\350\257\264\347\202\271\344\273\200\344\271\210\345\220\247:\360\237\230\200", nullptr));
         commitbtn->setText(QCoreApplication::translate("IMusicClass", "\346\217\220\344\272\244", nullptr));
+        geci_2->setPlaceholderText(QString());
         name->setText(QString());
         time->setText(QString());
         open->setText(QString());
@@ -495,6 +552,7 @@ public:
         prebtn->setText(QString());
         play->setText(QString());
         nextbtn->setText(QString());
+        hongxinbtn->setText(QString());
         loopbtn->setText(QString());
         volumebtn->setText(QString());
         versionbtn->setText(QCoreApplication::translate("IMusicClass", "v1.0", nullptr));
