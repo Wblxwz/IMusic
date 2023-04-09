@@ -15,12 +15,11 @@ namespace Ui { class IMusicClass; };
 QT_END_NAMESPACE
 
 /*ToDo:
-//歌词
-//切换源搜索
+//酷我和QQ源 歌词
+//歌词匹配时间
 //Love歌单
 
 //移动bug
-//列表循环 随机 模式bug
 */
 
 enum pattern
@@ -52,7 +51,6 @@ public:
 	void pre();
 	void next();
 	void next(const int index);
-	void change();
 	void changeSkin(const int c);
 	const int random(const int n) const;
 	void changePage(const int& index);
@@ -65,10 +63,16 @@ public:
 	const int getNewCfd();
 	void version();
 	void onlinePlay();
+
 	void parseJson(const QString& json);
 	void parseJson_2(const QString& json);
+	void parseJson_3(const QString& json);
+	void parseJson_4(const QString& json);
+
 	void replyFinished(QNetworkReply* reply);
 	void replyFinished_2(QNetworkReply* reply);
+	void replyFinished_3(QNetworkReply* reply);
+	void replyFinished_4(QNetworkReply* reply);
 protected:
 	void mousePressEvent(QMouseEvent* event) override;
 	void mouseMoveEvent(QMouseEvent* event) override;
@@ -80,11 +84,12 @@ private:
 	QStringList lists;
 	QAudioOutput* output;
 
-	QNetworkAccessManager* manager, * manager_2;
-	QNetworkRequest* request, * request_2;
+	QNetworkAccessManager* manager, * manager_2, * manager_3, * manager_4;
+	QNetworkRequest* request, * request_2, * request_3, * request_4;
 
 	QString durationTime;
 	QString positionTime;
+	QString songname;
 
 	QUrl neturl;
 
@@ -93,8 +98,10 @@ private:
 	QSettings* set;
 
 	std::unordered_map<int, QUrl> map;
+	std::unordered_map<QString, QUrl> qq_map;
 
 	bool isMute = false;
+	bool isComment = false;
 	bool isFullScreen = false;
 
 	int p = 0;
