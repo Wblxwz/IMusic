@@ -15,7 +15,7 @@ void SqlOperate::useDb(MYSQL* conn)
 
 bool SqlOperate::addLove(MYSQL* conn, const char* name, const char* id, const char* song, const char* singer)
 {
-	char sql[100];
+	char sql[500];
 	sprintf(sql, "INSERT INTO loves(user,id,song,singer) VALUES('%s','%s','%s','%s')", name, id, song, singer);
 	int ret = mysql_real_query(conn, sql, strlen(sql));
 	if (ret == 0)
@@ -35,6 +35,26 @@ void SqlOperate::getJson(MYSQL* conn, char* json, const char* name)
 	sprintf(json, "{\n    \"data\": [\n");
 	for (int i = 0; i < res->row_count - 1; ++i)
 	{
+		if (row = mysql_fetch_row(res))
+		{
+			isRow = true;
+			sprintf(json + strlen(json), "        {\n            \"id\": \"");
+			sprintf(json + strlen(json), row[1]);
+			sprintf(json + strlen(json), "\", \n            \"song\": \"");
+			sprintf(json + strlen(json), row[2]);
+			sprintf(json + strlen(json), "\", \n            \"singer\": \"");
+			sprintf(json + strlen(json), row[3]);
+			sprintf(json + strlen(json), "\"\n");
+			sprintf(json + strlen(json), "        },\n");
+		}
+		else
+		{
+			isRow = false;
+			break;
+		}
+	}
+	if (isRow)
+	{
 		row = mysql_fetch_row(res);
 		sprintf(json + strlen(json), "        {\n            \"id\": \"");
 		sprintf(json + strlen(json), row[1]);
@@ -43,18 +63,21 @@ void SqlOperate::getJson(MYSQL* conn, char* json, const char* name)
 		sprintf(json + strlen(json), "\", \n            \"singer\": \"");
 		sprintf(json + strlen(json), row[3]);
 		sprintf(json + strlen(json), "\"\n");
-		sprintf(json + strlen(json), "        },\n");
+		sprintf(json + strlen(json), "        }\n");
+		sprintf(json + strlen(json), "    ]\n}");
 	}
-	row = mysql_fetch_row(res);
-	sprintf(json + strlen(json), "        {\n            \"id\": \"");
-	sprintf(json + strlen(json), row[1]);
-	sprintf(json + strlen(json), "\", \n            \"song\": \"");
-	sprintf(json + strlen(json), row[2]);
-	sprintf(json + strlen(json), "\", \n            \"singer\": \"");
-	sprintf(json + strlen(json), row[3]);
-	sprintf(json + strlen(json), "\"\n");
-	sprintf(json + strlen(json), "        }\n");
-	sprintf(json + strlen(json), "    ]\n}");
+}
+
+bool SqlOperate::deleteLove(MYSQL* conn, const char* name, const char* id)
+{
+	char sql[200];
+	sprintf(sql, "DELETE FROM loves WHERE user = '%s' AND id = '%s'", name, id);
+	std::cout << sql << std::endl;
+	int ret = mysql_real_query(conn, sql, strlen(sql));
+	if (ret == 0)
+		return true;
+	else
+		return false;
 }
 
 const char* SqlOperate::select(MYSQL* conn, const char* sql)

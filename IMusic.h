@@ -18,7 +18,6 @@ QT_END_NAMESPACE
 //酷我和QQ源 歌词
 //歌词匹配时间
 //Love歌单
-//本地歌曲 对我的最爱
 //本地歌曲记录？
 
 //移动bug
@@ -68,6 +67,7 @@ public:
 	void onlinePlay();
 	void myLove();
 	void addLove();
+	void deleteLove(const QString& name, const QString& id);
 
 	void parseJson(const QString& json);
 	void parseJson_2(const QString& json);

@@ -96,4 +96,19 @@ void Worker::work()
 			sprintf(buf, "false");
 		send(cfd, buf, sizeof(buf), NULL);
 	}
+	if (s.find("delete:") != -1)
+	{
+		int idPos = s.find("id:");
+		std::string name, id;
+		for (int i = 7; i < idPos; ++i)
+			name.push_back(s[i]);
+		for (int i = idPos + 3; i < s.size(); ++i)
+			id.push_back(s[i]);
+		char tbuf[10];
+		if (sql.deleteLove(conn, name.c_str(), id.c_str()))
+			sprintf(tbuf, "true");
+		else
+			sprintf(tbuf, "false");
+		send(cfd, tbuf, sizeof(tbuf), NULL);
+	}
 }

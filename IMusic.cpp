@@ -166,7 +166,7 @@ void IMusic::init()
 
 	connect(ui->commentbtn, &QPushButton::clicked, this, [&]() {
 		QString content;
-		if(ui->stackedWidget->currentIndex() == 1)
+		if (ui->stackedWidget->currentIndex() == 1)
 			content = QString("http://music.163.com/api/v1/resource/comments/R_SO_4_%1?limit=50&offset=0").arg(model_2->index(ui->searchlist->currentIndex().row(), 2).data(2).toInt());
 		else
 			content = QString("http://music.163.com/api/v1/resource/comments/R_SO_4_%1?limit=50&offset=0").arg(model_3->index(ui->loves->currentIndex().row(), 2).data(2).toInt());
@@ -223,8 +223,10 @@ void IMusic::init()
 			case randomloop:
 				if (ui->stackedWidget->currentIndex() == 1)
 					next(random(model_2->rowCount()));
-				else
+				else if (ui->stackedWidget->currentIndex() == 2)
 					next(random(model->rowCount()));
+				else
+					next(random(model_3->rowCount()));
 				break;
 			default:
 				break;
@@ -262,7 +264,16 @@ void IMusic::init()
 		doublePlay(QUrl(index));
 		});
 	connect(ui->loves, &QTableView::doubleClicked, this, [&]() {
-		onlinePlay();
+		QString index = model_3->data(model_3->index(ui->loves->currentIndex().row(), 2)).toString();
+		QString ttname = model_3->data(model_3->index(ui->loves->currentIndex().row(), 0)).toString();
+		std::string tss(ttname.toStdString());
+		if (tss.find("本地") != -1)
+		{
+			ui->name->setText(ttname);
+			doublePlay(QUrl(index));
+		}
+		else
+			onlinePlay();
 		});
 	connect(ui->timebar, &QSlider::sliderReleased, this, [&]() {
 		player->setPosition(ui->timebar->value());
@@ -407,7 +418,7 @@ void IMusic::pre()
 		player->setSource(QUrl(tindex));
 		ui->tableView->setCurrentIndex(model->index(preIndex, 0));
 	}
-	else
+	else if (index == 1)
 	{
 		n = model_2->rowCount();
 		preIndex = ui->searchlist->currentIndex().row() - 1;
@@ -425,6 +436,34 @@ void IMusic::pre()
 			int id = ui->searchlist->currentIndex().data(2).toInt();
 			player->setSource(map[id]);
 		}
+	}
+	else
+	{
+		n = model_3->rowCount();
+		preIndex = ui->loves->currentIndex().row() - 1;
+		if (preIndex < 0)
+			preIndex = n - 1;
+		ui->loves->setCurrentIndex(model_3->index(preIndex, 0));
+		QString ttname = model_3->data(model_3->index(preIndex, 0)).toString();
+		std::string tname(ttname.toStdString());
+		if (tname.find("本地") != -1)
+		{
+			tindex = model_3->data(model_3->index(preIndex, 2)).toString();
+			player->setSource(QUrl(tindex));
+		}
+		else if (tname.find("QQ") != -1)
+		{
+			onlinePlay();
+			QString id = ui->loves->currentIndex().data(2).toString();
+			player->setSource(qq_map[id]);
+		}
+		else
+		{
+			onlinePlay();
+			int id = ui->loves->currentIndex().data(2).toInt();
+			player->setSource(map[id]);
+		}
+		ui->name->setText(ttname);
 	}
 	player->play();
 	ui->play->setStyleSheet("border-image:url(:/IMusic/images/pause.png);");
@@ -449,7 +488,7 @@ void IMusic::next()
 		ui->name->setText(elideFont.elidedText(ui->tableView->currentIndex().data(0).toString(), Qt::ElideRight, ui->name->width()));
 		player->setSource(QUrl(tindex));
 	}
-	else
+	else if (index == 1)
 	{
 		n = model_2->rowCount();
 		nextIndex = ui->searchlist->currentIndex().row() + 1;
@@ -468,6 +507,34 @@ void IMusic::next()
 		else
 		{
 			int id = ui->searchlist->currentIndex().data(2).toInt();
+			player->setSource(map[id]);
+		}
+	}
+	else
+	{
+		n = model_3->rowCount();
+		nextIndex = ui->loves->currentIndex().row() + 1;
+		if (nextIndex > n - 1)
+			nextIndex = 0;
+		QFontMetrics elideFont(ui->name->font());
+		ui->loves->setCurrentIndex(model_3->index(nextIndex, 0));
+		songname = ui->loves->currentIndex().data(0).toString();
+		ui->name->setText(elideFont.elidedText(ui->loves->currentIndex().data(0).toString(), Qt::ElideRight, ui->name->width()));
+		if (songname.toStdString().find("本地") != -1)
+		{
+			tindex = model_3->data(model_3->index(nextIndex, 2)).toString();
+			player->setSource(QUrl(tindex));
+		}
+		else if (songname.toStdString().find("QQ") != -1)
+		{
+			onlinePlay();
+			QString id = ui->loves->currentIndex().data(2).toString();
+			player->setSource(qq_map[id]);
+		}
+		else
+		{
+			onlinePlay();
+			int id = ui->loves->currentIndex().data(2).toInt();
 			player->setSource(map[id]);
 		}
 	}
@@ -490,7 +557,7 @@ void IMusic::next(const int index)
 		ui->name->setText(elideFont.elidedText(ui->tableView->currentIndex().data(0).toString(), Qt::ElideRight, ui->name->width()));
 		player->setSource(QUrl(nextIndex));
 	}
-	else
+	else if (cindex == 1)
 	{
 		if (index < 0 || index >= model_2->rowCount())
 			return;
@@ -507,6 +574,32 @@ void IMusic::next(const int index)
 		else
 		{
 			int id = ui->searchlist->currentIndex().data(2).toInt();
+			player->setSource(map[id]);
+		}
+	}
+	else
+	{
+		if (index < 0 || index >= model_3->rowCount())
+			return;
+		ui->loves->setCurrentIndex(model_3->index(index, 0));
+		QFontMetrics elideFont(ui->name->font());
+		songname = ui->loves->currentIndex().data(0).toString();
+		ui->name->setText(elideFont.elidedText(ui->loves->currentIndex().data(0).toString(), Qt::ElideRight, ui->name->width()));
+		if (songname.toStdString().find("本地") != -1)
+		{
+			QString tindex = model_3->data(model_3->index(index, 2)).toString();
+			player->setSource(QUrl(tindex));
+		}
+		else if (songname.toStdString().find("QQ") != -1)
+		{
+			onlinePlay();
+			QString id = ui->loves->currentIndex().data(2).toString();
+			player->setSource(qq_map[id]);
+		}
+		else
+		{
+			onlinePlay();
+			int id = ui->loves->currentIndex().data(2).toInt();
 			player->setSource(map[id]);
 		}
 	}
@@ -707,18 +800,18 @@ void IMusic::onlinePlay()
 		index = ui->loves->currentIndex().row();
 		id = model_3->data(model_3->index(index, 2)).toString();
 		std::string tname = model_3->data(model_3->index(index, 0)).toString().toStdString();
-		if(tname.find("网易云") != -1)
+		if (tname.find("网易云") != -1)
 			content = QString("https://music-api.tonzhon.com/song_source/netease/%1").arg(id);
-		else if(tname.find("QQ") != -1)
+		else if (tname.find("QQ") != -1)
 			content = QString("https://music-api.tonzhon.com/song_source/qq/%1").arg(id);
-		else if(tname.find("酷我") != -1)
+		else if (tname.find("酷我") != -1)
 			content = QString("https://music-api.tonzhon.com/song_source/kuwo/%1").arg(id);
 	}
-	
+
 	request_2->setUrl(QUrl(content));
 	manager_2->get(*request_2);
 	QFontMetrics elideFont(ui->name->font());
-	if(ui->stackedWidget->currentIndex() == 1)
+	if (ui->stackedWidget->currentIndex() == 1)
 	{
 		songname = ui->searchlist->currentIndex().data(0).toString();
 		ui->name->setText(elideFont.elidedText(songname, Qt::ElideRight, ui->name->width()));
@@ -751,7 +844,8 @@ void IMusic::myLove()
 	int ret = send(cfd, buf, sizeof(buf), NULL);
 	char jsonBuf[4096];
 	recv(cfd, jsonBuf, sizeof(jsonBuf), NULL);
-	myParseJson(jsonBuf);
+	if (jsonBuf != "")
+		myParseJson(jsonBuf);
 }
 
 void IMusic::addLove()
@@ -761,8 +855,11 @@ void IMusic::addLove()
 		QMessageBox::critical(this, "错误", "请登录后再添加");
 		return;
 	}
-	if (ui->stackedWidget->currentIndex() == 2)
-		QMessageBox::warning(this, "抱歉", "本地歌曲暂不支持添加至我的最爱");
+	if (ui->stackedWidget->currentIndex() == 4)
+	{
+		deleteLove(ui->namelabel->text(), model_3->index(ui->loves->currentIndex().row(), 2).data(0).toString());
+		return;
+	}
 	/*if (ui->huanyuan->currentIndex() != 0)
 	{
 		QMessageBox::critical(this, "错误", "除网易云外暂不支持添加至我的最爱");
@@ -814,6 +911,27 @@ void IMusic::addLove()
 	{
 		QMessageBox::information(this, "添加失败", "请等待服务器修复");
 	}
+}
+
+void IMusic::deleteLove(const QString& name, const QString& id)
+{
+	int cfd = getNewCfd();
+	char buf[100];
+	sprintf(buf, "delete:");
+	sprintf(buf + strlen(buf), name.toStdString().c_str());
+	sprintf(buf + strlen(buf), "id:");
+	sprintf(buf + strlen(buf), id.toStdString().c_str());
+	send(cfd, buf, sizeof(buf), NULL);
+	char tbuf[10];
+	recv(cfd, tbuf, sizeof(tbuf), NULL);
+	QString s(tbuf);
+	if (s == "true")
+	{
+		QMessageBox::information(this, "删除成功", "已从我的最爱中删除");
+		myLove();
+	}
+	else
+		QMessageBox::information(this, "删除失败", "请等待服务器修复");
 }
 
 void IMusic::parseJson(const QString& json)

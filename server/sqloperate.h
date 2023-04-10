@@ -12,6 +12,10 @@ public:
 
 	bool addLove(MYSQL* conn, const char* name, const char* id, const char* song, const char* singer);
 	void getJson(MYSQL* conn, char* json, const char* name);
+	bool deleteLove(MYSQL* conn, const char* name, const char* id);
 	const char* select(MYSQL* conn, const char* sql);
 	bool noReturn(MYSQL* conn, const char* sql);
+
+private:
+	bool isRow = true;
 };
